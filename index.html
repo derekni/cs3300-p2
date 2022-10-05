@@ -1,0 +1,196 @@
+<html>
+  <head>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+  </head>
+  <body>
+    <h3>
+      CS 3300 Project 1
+      <br />
+      NetIDs: dan82, mj374, bdp64
+    </h3>
+    <svg width="360" height="360" id="a"></svg>
+    <svg width="360" height="360" id="b"></svg>
+    <script>
+      p2_svg = d3.select("svg#a");
+
+      // add square outline
+      p2_svg
+        .append("line")
+        .attr("x1", 0)
+        .attr("y1", 0)
+        .attr("x2", 360)
+        .attr("y2", 0)
+        .style("stroke", "gray");
+      p2_svg
+        .append("line")
+        .attr("x1", 0)
+        .attr("y1", 360)
+        .attr("x2", 360)
+        .attr("y2", 360)
+        .style("stroke", "gray");
+      p2_svg
+        .append("line")
+        .attr("x1", 360)
+        .attr("y1", 0)
+        .attr("x2", 360)
+        .attr("y2", 360)
+        .style("stroke", "gray");
+      p2_svg
+        .append("line")
+        .attr("x1", 0)
+        .attr("y1", 360)
+        .attr("x2", 0)
+        .attr("y2", 0)
+        .style("stroke", "gray");
+
+      // horizontal grid lines
+      for (let i = 0; i <= 10; i++) {
+        p2_svg
+          .append("line")
+          .attr("x1", 20)
+          .attr("y1", 20 + 32 * i)
+          .attr("x2", 340)
+          .attr("y2", 20 + 32 * i)
+          .style("stroke", "lightgray");
+      }
+
+      // vertical grid lines
+      for (let i = 0; i <= 10; i++) {
+        p2_svg
+          .append("line")
+          .attr("x1", 20 + 32 * i)
+          .attr("y1", 20)
+          .attr("x2", 20 + 32 * i)
+          .attr("y2", 340)
+          .style("stroke", "lightgray");
+      }
+
+      // add coordinate points
+      let data = [
+        { x: 1.0, y: 1.0 },
+        { x: 2.0, y: 2.0 },
+        { x: 3.0, y: 3.0 },
+        { x: 3.8, y: 5.0 },
+        { x: 4.4, y: 6.4 },
+        { x: 5.8, y: 7.5 },
+        { x: 7.3, y: 8.2 },
+        { x: 8.3, y: 8.7 },
+        { x: 9.3, y: 9.2 },
+      ];
+      data.forEach((point) => {
+        p2_svg
+          .append("circle")
+          .attr("cx", point.x * 32 + 20)
+          .attr("cy", 340 - point.y * 32)
+          .attr("r", 10)
+          .style("fill", "maroon");
+      });
+
+      d3.json("chip_dataset.json").then((data) => {
+        const parent = d3.select("body");
+        const margins = { top: 10, right: 10, bottom: 50, left: 50 };
+
+        let svg = parent.append("svg").attr("height", 500).attr("width", 500);
+
+        let chartArea = svg
+          .append("g")
+          .attr("transform", `translate(${margins.left}, ${margins.top})`);
+
+        const chartWidth = svg.attr("width") - margins.left - margins.right;
+        const chartHeight = svg.attr("height") - margins.top - margins.bottom;
+
+        const releaseExtent = d3.extent(data, (d) => d["Release Day"]);
+        const transistorExtent = d3.extent(
+          data,
+          (d) => d["Transistors(million)"]
+        );
+
+        const xScale = d3
+          .scaleLinear()
+          .domain(releaseExtent)
+          .range([0, chartWidth]);
+
+        const yScale = d3
+          .scaleLog()
+          .domain(transistorExtent)
+          .range([chartHeight, 0]);
+
+        const axisLeft = d3.axisLeft(yScale);
+        svg
+          .append("g")
+          .attr("class", "y axis")
+          .attr("transform", `translate(${margins.left - 10}, ${margins.top})`)
+          .call(axisLeft);
+
+        const leftGridlines = d3
+          .axisLeft(yScale)
+          .tickSize(-chartWidth - 10)
+          .tickFormat("");
+        svg
+          .append("g")
+          .attr("class", "y gridlines")
+          .attr("transform", `translate(${margins.left - 10}, ${margins.top})`)
+          .call(leftGridlines);
+
+        const axisBottom = d3.axisBottom(xScale);
+        svg
+          .append("g")
+          .attr("class", "x axis")
+          .attr(
+            "transform",
+            `translate(${margins.left}, ${margins.top + chartHeight + 10})`
+          )
+          .call(axisBottom);
+
+        const bottomGridlines = d3
+          .axisBottom(xScale)
+          .tickSize(-chartHeight - 10)
+          .tickFormat("");
+        svg
+          .append("g")
+          .attr("class", "x gridlines")
+          .attr(
+            "transform",
+            `translate(${margins.left}, ${margins.top + chartHeight + 10})`
+          )
+          .call(bottomGridlines);
+
+        data.forEach((d) => {
+          chartArea
+            .append("circle")
+            .attr("r", 3)
+            .attr("cx", xScale(d["Release Day"]))
+            .attr("cy", yScale(d["Transistors(million)"]))
+            .attr("fill", "darkblue")
+            .attr("style", "opacity: 0.3");
+        });
+      });
+
+      const svg = d3.select("svg#b");
+      d3.csv("NCAA_shots.csv", d3.autoType).then((data) => {
+        data.forEach((d) => {
+          d.x *= 5;
+          d.y *= 5;
+          d.width *= 5;
+          d.height *= 5;
+        });
+
+        const attemptExtent = d3.extent(data, (d) => d.log_attempt);
+        const colorScale = d3
+          .scaleSequential(d3.interpolateViridis)
+          .domain(attemptExtent);
+
+        // Part B / C
+        svg
+          .selectAll("rect")
+          .data(data)
+          .join("rect")
+          .attr("x", (d) => d.x)
+          .attr("y", (d) => d.y)
+          .attr("width", (d) => d.width)
+          .attr("height", (d) => d.height)
+          .attr("fill", (d) => colorScale(d.log_attempt));
+      });
+    </script>
+  </body>
+</html>
