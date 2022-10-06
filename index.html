@@ -15,9 +15,188 @@
   <body>
     <h3>Megan Jung mj374, Derek Ni dan82, Bhav Patel </h3>
     <p id="p1">
-      1.
+      <div id="graph"></div>
       <div id = "live_in_div"></div>
       <script>
+        const maxPrice = (dataset) => {
+          return d3.max(dataset, function(d) {
+            return d.Open;
+          })
+        }
+        const minPrice = (dataset) => {
+          return d3.min(dataset, function(d) {
+            return d.Open;
+          })
+        }
+        const ogPrice = (dataset) => {
+          return dataset[0].Open;
+        }
+        const percentageChange = (newVal, oldVal) => {
+          return (newVal / oldVal - 1) * 100;
+        }
+
+        async function initialize() {
+          const spy = await d3.csv("data/SPY.csv", d3.autoType);
+          const aapl = await d3.csv("data/AAPL.csv", d3.autoType);
+          const amzn = await d3.csv("data/AMZN.csv", d3.autoType);
+          const btc = await d3.csv("data/BTC-USD.csv", d3.autoType);
+          const doge = await d3.csv("data/DOGE-USD.csv", d3.autoType);
+          const goog = await d3.csv("data/GOOG.csv", d3.autoType);
+          const meta = await d3.csv("data/META.csv", d3.autoType);
+          const nflx = await d3.csv("data/NFLX.csv", d3.autoType);
+          const tsla = await d3.csv("data/TSLA.csv", d3.autoType);
+          const stocks = [spy,aapl,amzn,btc,doge,goog,meta,nflx,tsla];
+          const stockNames = ["spy","aapl","amzn","btc","doge","goog","meta","nflx","tsla"];
+
+          const spyOG = ogPrice(spy);
+          const aaplOG = ogPrice(aapl);
+          const amznOG = ogPrice(amzn);
+          const btcOG = ogPrice(btc);
+          const dogeOG = ogPrice(doge);
+          const googOG = ogPrice(goog);
+          const metaOG = ogPrice(meta);
+          const nflxOG = ogPrice(nflx);
+          const tslaOG = ogPrice(tsla);
+          const OGs = [spyOG,aaplOG,amznOG,btcOG,dogeOG,googOG,metaOG,nflxOG,tslaOG];
+
+          const spyMax = maxPrice(spy);
+          const aaplMax = maxPrice(aapl);
+          const amznMax = maxPrice(amzn);
+          const btcMax = maxPrice(btc);
+          const dogeMax = maxPrice(doge);
+          const googMax = maxPrice(goog);
+          const metaMax = maxPrice(meta);
+          const nflxMax = maxPrice(nflx);
+          const tslaMax = maxPrice(tsla);
+          const maxes = [spyMax,aaplMax,amznMax,btcMax,dogeMax,googMax,metaMax,nflxMax,tslaMax];
+
+          const spyMin = minPrice(spy);
+          const aaplMin = minPrice(aapl);
+          const amznMin = minPrice(amzn);
+          const btcMin = minPrice(btc);
+          const dogeMin = minPrice(doge);
+          const googMin = minPrice(goog);
+          const metaMin = minPrice(meta);
+          const nflxMin = minPrice(nflx);
+          const tslaMin = minPrice(tsla);
+          const mins = [spyMin,aaplMin,amznMin,btcMin,dogeMin,googMin,metaMin,nflxMin,tslaMin];
+
+          // find biggest positive change
+          let bestPosChange = 0;
+          const maxPosChange = maxes.forEach((d, i) => {
+            const og = OGs[i];
+            change = percentageChange(d, og);
+            bestPosChange = Math.max(bestPosChange, change);
+          })
+
+          // find biggest negative change
+          let bestNegChange = 0;
+          const maxNegChange = mins.forEach((d, i) => {
+            const og = OGs[i];
+            change = percentageChange(d, og);
+            bestNegChange = Math.min(bestNegChange, change);
+          })
+
+          const div = d3.select("#graph");
+
+          div.append("svg")
+             .attr("width", "800")
+             .attr("height", "400")
+             .attr("id", "plot")
+
+          const svg = d3.select("svg#plot");
+          const width = svg.attr("width");
+          const height = svg.attr("height");
+          const margin = {top: 50, right: 50, bottom: 50, left: 50};
+          const chartWidth = width - margin.left - margin.right;
+          const chartHeight = height - margin.top - margin.bottom;
+
+          let annotations = svg.append("g").attr("id","annotations");
+          let chartArea = svg.append("g").attr("id","chart-area")
+                          .attr("transform",`translate(${margin.left},${margin.top})`);
+
+          // const timeParser = d3.timeParse('%Y-%m-%d');
+
+          // dates are synchronized between all CSVs
+          const earliestDate = tsla[0].Date;
+          const latestDate = tsla[tsla.length - 1].Date;
+          const scaleTime = d3.scaleTime()
+                              .domain([earliestDate, latestDate])
+                              .range([0,chartWidth]);
+
+          const scaleLinear = d3.scaleLinear()
+                                .domain([-100, bestPosChange])
+                                .range([chartHeight, 0]);
+          const scaleOrdinal = d3.scaleOrdinal(d3.schemeCategory10);
+
+          let bottomAxis = d3.axisBottom(scaleTime)
+
+          let bottomGridlines = d3.axisBottom(scaleTime)
+                                  .tickSize(-chartHeight-10)
+                                  .tickFormat("");
+          annotations.append("g")
+            .attr("class", "x axis")
+            .attr("transform",`translate(${margin.left},${chartHeight + margin.top + 10})`)
+            .call(bottomAxis);
+          annotations.append("g")
+            .attr("class", "x gridlines")
+            .attr("transform",`translate(${margin.left},${chartHeight + margin.top + 10})`)
+            .call(bottomGridlines);
+
+          let leftAxis = d3.axisLeft(scaleLinear)
+          let leftGridlines = d3.axisLeft(scaleLinear)
+                                .tickSize(-chartWidth-10)
+                                .tickFormat("")
+          annotations.append("g")
+            .attr("class", "y axis")
+            .attr("transform",`translate(${margin.left - 10},${margin.top})`)
+            .call(leftAxis)
+          annotations.append("g")
+            .attr("class", "y gridlines")
+            .attr("transform",`translate(${margin.left - 10},${margin.top})`)
+            .call(leftGridlines);
+
+          //Part D
+          
+          //Part E
+          // stocks.forEach((d, i) => {
+
+          console.log
+          var lineGenerator = d3.line()
+                    .x(value => scaleTime(value.Date))
+                    .y(value => scaleLinear(percentageChange(value.Open, tsla[0].Open)))
+
+          //   console.log(d);
+          let gTags = chartArea.selectAll(`g.tsla`).data(tsla)
+                                .join("g")
+                                .attr("class", "stock")
+                                .attr("id", "tsla")
+                                .style("stroke", d => scaleOrdinal("tsla"));
+
+          gTags.append("path")
+              .attr("class", "line")
+              .attr("fill", "red")
+              .attr("stroke-width", 2)
+              .attr("d", tsla => lineGenerator(tsla));
+
+          // gTags.selectAll('circle')
+          //   .data(tsla)
+          //   .join('circle')
+          //   .attr("cx", v => scaleTime(v.Date))
+          //   .attr("cy", v => scaleLinear(percentageChange(v.Open, tsla[0].Open)))
+          //   .attr("r", 2)
+          //   .attr("fill", scaleOrdinal("tsla"));
+          console.log("done")
+          // });
+
+          //Part F
+
+          //Part G
+          
+        }
+        initialize();
+
+
         //Part A
         let divider_1 = d3.select("#live_in_div");
         divider_1.append("svg")
@@ -38,8 +217,6 @@
 
         
         d3.json("mariokart_records.json").then((data) => {
-          console.log(data)
-//Part B
           const timeParser = d3.timeParse('%Y-%m-%d');
           const scaleTime = d3.scaleTime()
                               .domain([timeParser(data['earliest_date']), timeParser(data['latest_date'])])
