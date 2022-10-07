@@ -16,7 +16,6 @@
     <h3>Megan Jung mj374, Derek Ni dan82, Bhav Patel </h3>
     <p id="p1">
       <div id="graph"></div>
-      <div id = "live_in_div"></div>
       <script>
         const maxPrice = (dataset) => {
           return d3.max(dataset, function(d) {
@@ -40,46 +39,46 @@
           const aapl = await d3.csv("data/AAPL.csv", d3.autoType);
           const amzn = await d3.csv("data/AMZN.csv", d3.autoType);
           const btc = await d3.csv("data/BTC-USD.csv", d3.autoType);
-          const doge = await d3.csv("data/DOGE-USD.csv", d3.autoType);
+          // const doge = await d3.csv("data/DOGE-USD.csv", d3.autoType);
           const goog = await d3.csv("data/GOOG.csv", d3.autoType);
           const meta = await d3.csv("data/META.csv", d3.autoType);
           const nflx = await d3.csv("data/NFLX.csv", d3.autoType);
           const tsla = await d3.csv("data/TSLA.csv", d3.autoType);
-          const stocks = [spy,aapl,amzn,btc,doge,goog,meta,nflx,tsla];
-          const stockNames = ["spy","aapl","amzn","btc","doge","goog","meta","nflx","tsla"];
+          const stocks = [spy,aapl,amzn,btc,goog,meta,nflx,tsla];
+          const stockNames = ["spy","aapl","amzn","btc","goog","meta","nflx","tsla"];
 
           const spyOG = ogPrice(spy);
           const aaplOG = ogPrice(aapl);
           const amznOG = ogPrice(amzn);
           const btcOG = ogPrice(btc);
-          const dogeOG = ogPrice(doge);
+          // const dogeOG = ogPrice(doge);
           const googOG = ogPrice(goog);
           const metaOG = ogPrice(meta);
           const nflxOG = ogPrice(nflx);
           const tslaOG = ogPrice(tsla);
-          const OGs = [spyOG,aaplOG,amznOG,btcOG,dogeOG,googOG,metaOG,nflxOG,tslaOG];
+          const OGs = [spyOG,aaplOG,amznOG,btcOG,googOG,metaOG,nflxOG,tslaOG];
 
           const spyMax = maxPrice(spy);
           const aaplMax = maxPrice(aapl);
           const amznMax = maxPrice(amzn);
           const btcMax = maxPrice(btc);
-          const dogeMax = maxPrice(doge);
+          // const dogeMax = maxPrice(doge);
           const googMax = maxPrice(goog);
           const metaMax = maxPrice(meta);
           const nflxMax = maxPrice(nflx);
           const tslaMax = maxPrice(tsla);
-          const maxes = [spyMax,aaplMax,amznMax,btcMax,dogeMax,googMax,metaMax,nflxMax,tslaMax];
+          const maxes = [spyMax,aaplMax,amznMax,btcMax,googMax,metaMax,nflxMax,tslaMax];
 
           const spyMin = minPrice(spy);
           const aaplMin = minPrice(aapl);
           const amznMin = minPrice(amzn);
           const btcMin = minPrice(btc);
-          const dogeMin = minPrice(doge);
+          // const dogeMin = minPrice(doge);
           const googMin = minPrice(goog);
           const metaMin = minPrice(meta);
           const nflxMin = minPrice(nflx);
           const tslaMin = minPrice(tsla);
-          const mins = [spyMin,aaplMin,amznMin,btcMin,dogeMin,googMin,metaMin,nflxMin,tslaMin];
+          const mins = [spyMin,aaplMin,amznMin,btcMin,googMin,metaMin,nflxMin,tslaMin];
 
           // find biggest positive change
           let bestPosChange = 0;
@@ -107,15 +106,13 @@
           const svg = d3.select("svg#plot");
           const width = svg.attr("width");
           const height = svg.attr("height");
-          const margin = {top: 50, right: 50, bottom: 50, left: 50};
+          const margin = {top: 100, right: 50, bottom: 50, left: 50};
           const chartWidth = width - margin.left - margin.right;
           const chartHeight = height - margin.top - margin.bottom;
 
           let annotations = svg.append("g").attr("id","annotations");
           let chartArea = svg.append("g").attr("id","chart-area")
                           .attr("transform",`translate(${margin.left},${margin.top})`);
-
-          // const timeParser = d3.timeParse('%Y-%m-%d');
 
           // dates are synchronized between all CSVs
           const earliestDate = tsla[0].Date;
@@ -156,134 +153,67 @@
             .attr("transform",`translate(${margin.left - 10},${margin.top})`)
             .call(leftGridlines);
 
-          //Part D
-          
-          //Part E
-          // stocks.forEach((d, i) => {
+          let stockObjects = [];
+          stocks.forEach((stock, index) => {
+            const open = stock[0].Open;
+            let lineGenerator = d3.line()
+              .x(value => scaleTime(value.Date))
+              .y(value => scaleLinear(percentageChange(value.Open, open)));
 
-          console.log
-          var lineGenerator = d3.line()
-                    .x(value => scaleTime(value.Date))
-                    .y(value => scaleLinear(percentageChange(value.Open, tsla[0].Open)))
+            stock = {
+              name: stockNames[index],
+              values: stock,
+              lineGenerator: lineGenerator,
+            }
+            stockObjects.push(stock);
+          })
+          console.log(stockObjects);
 
-          //   console.log(d);
-          let gTags = chartArea.selectAll(`g.tsla`).data(tsla)
-                                .join("g")
-                                .attr("class", "stock")
-                                .attr("id", "tsla")
-                                .style("stroke", d => scaleOrdinal("tsla"));
-
+          let gTags = chartArea.selectAll("g").data(stockObjects)
+                            .join("g")
+                            .attr("class", "stock")
+                            .attr("id", d => d.name)
+                            .style("stroke", d => scaleOrdinal(d.name));
           gTags.append("path")
-              .attr("class", "line")
-              .attr("fill", "red")
+              .attr("fill", "none")
               .attr("stroke-width", 2)
-              .attr("d", tsla => lineGenerator(tsla));
+              .attr("d", d => d.lineGenerator(d.values));
 
-          // gTags.selectAll('circle')
-          //   .data(tsla)
-          //   .join('circle')
-          //   .attr("cx", v => scaleTime(v.Date))
-          //   .attr("cy", v => scaleLinear(percentageChange(v.Open, tsla[0].Open)))
-          //   .attr("r", 2)
-          //   .attr("fill", scaleOrdinal("tsla"));
-          console.log("done")
-          // });
+          svg.selectAll("labels")
+            .data(stockObjects)
+            .enter()
+            .append("text")
+            .attr("x", 50)
+            .attr("y", (d,i) => 100 + i*25) // 100 is where the first dot appears. 25 is the distance between dots
+            .style("fill", (d) => scaleOrdinal(d.name))
+            .text(d => d.name)
 
-          //Part F
-
-          //Part G
-          
+          // add a title
+          svg.append("text")
+             .attr("x", 75)
+             .attr("y", 50)
+             .text("Stock performance in percentages relative to baseline from Jan 2020 to Oct 2022")
         }
         initialize();
 
 
-        //Part A
-        let divider_1 = d3.select("#live_in_div");
-        divider_1.append("svg")
-           .attr("width", "800")
-           .attr("height", "400")
-           .attr("id", "plot")
-
-        const svg = d3.select("svg#plot");
-        const width = svg.attr("width");
-        const height = svg.attr("height");
-        const margin = {top: 50, right: 50, bottom: 50, left: 50};
-        const chartWidth = width - margin.left - margin.right;
-        const chartHeight = height - margin.top - margin.bottom;
-
-        let annotations = svg.append("g").attr("id","annotations");
-        let chartArea = svg.append("g").attr("id","chart-area")
-                        .attr("transform",`translate(${margin.left},${margin.top})`);
-
-        
-        d3.json("mariokart_records.json").then((data) => {
-          const timeParser = d3.timeParse('%Y-%m-%d');
-          const scaleTime = d3.scaleTime()
-                              .domain([timeParser(data['earliest_date']), timeParser(data['latest_date'])])
-                              .range([0,chartWidth]);
-
-          const scaleLinear = d3.scaleLinear()
-                                .domain([data['min_value'], data['max_value']])
-                                .range([chartHeight, 0]);
-          const scaleOrdinal = d3.scaleOrdinal(d3.schemeCategory10);
-
-
-          //Part C
-          let bottomAxis = d3.axisBottom(scaleTime)
-
-          let bottomGridlines = d3.axisBottom(scaleTime)
-                                  .tickSize(-chartHeight-10)
-                                  .tickFormat("")
-          annotations.append("g")
-            .attr("class", "x axis")
-            .attr("transform",`translate(${margin.left},${chartHeight + margin.top + 10})`)
-            .call(bottomAxis);
-          annotations.append("g")
-            .attr("class", "x gridlines")
-            .attr("transform",`translate(${margin.left},${chartHeight + margin.top + 10})`)
-            .call(bottomGridlines);
-
-          let leftAxis = d3.axisLeft(scaleLinear)
-          let leftGridlines = d3.axisLeft(scaleLinear)
-                                .tickSize(-chartWidth-10)
-                                .tickFormat("")
-          annotations.append("g")
-            .attr("class", "y axis")
-            .attr("transform",`translate(${margin.left - 10},${margin.top})`)
-            .call(leftAxis)
-          annotations.append("g")
-            .attr("class", "y gridlines")
-            .attr("transform",`translate(${margin.left - 10},${margin.top})`)
-            .call(leftGridlines);
-
-          //Part D
+       // REFERENCE CODE
           var lineGenerator = d3.line()
                     .x(value => scaleTime(timeParser(value['date'])))
                     .y(value => scaleLinear(value['record_time']))
 
-          //Part E
           let gTags = chartArea.selectAll("g.track").data(data.timeseries)
                                .join("g")
                                .attr("class", "track")
                                .attr("id", d => d.track)
                                .style("stroke", d => scaleOrdinal(d.track));
 
-          //Part F
           gTags.append("path")
                .attr("class", "line")
                .attr("fill", "none")
                .attr("stroke-width", 2)
                .attr("d", d => lineGenerator(d.values));
 
-          //Part G
-          gTags.selectAll('circle')
-               .data(d => d.values)
-               .join('circle')
-               .attr("cx", v => scaleTime(timeParser(v.date)))
-               .attr("cy", v => scaleLinear(v.record_time))
-               .attr("r", 2)
-               .attr("fill", v => scaleOrdinal(v.track));
-       });
       </script>
     </p>
   </body>
