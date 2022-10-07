@@ -13,7 +13,7 @@
     </style>
   </head>
   <body>
-    <h3>Megan Jung mj374, Derek Ni dan82, Bhav Patel </h3>
+    <h3>Megan Jung mj374, Derek Ni dan82, Bhav Patel bdp64 </h3>
     <p id="p1">
       <div id="graph"></div>
       <script>
@@ -106,7 +106,7 @@
           const svg = d3.select("svg#plot");
           const width = svg.attr("width");
           const height = svg.attr("height");
-          const margin = {top: 100, right: 50, bottom: 50, left: 50};
+          const margin = {top: 100, right: 70, bottom: 50, left: 50};
           const chartWidth = width - margin.left - margin.right;
           const chartHeight = height - margin.top - margin.bottom;
 
@@ -132,56 +132,57 @@
                                   .tickSize(-chartHeight-10)
                                   .tickFormat("");
           annotations.append("g")
-            .attr("class", "x axis")
-            .attr("transform",`translate(${margin.left},${chartHeight + margin.top + 10})`)
-            .call(bottomAxis);
+              .attr("class", "x axis")
+              .attr("transform",`translate(${margin.left},${chartHeight + margin.top + 10})`)
+              .call(bottomAxis);
           annotations.append("g")
-            .attr("class", "x gridlines")
-            .attr("transform",`translate(${margin.left},${chartHeight + margin.top + 10})`)
-            .call(bottomGridlines);
+              .attr("class", "x gridlines")
+              .attr("transform",`translate(${margin.left},${chartHeight + margin.top + 10})`)
+              .call(bottomGridlines);
 
           let leftAxis = d3.axisLeft(scaleLinear)
           let leftGridlines = d3.axisLeft(scaleLinear)
                                 .tickSize(-chartWidth-10)
                                 .tickFormat("")
           annotations.append("g")
-            .attr("class", "y axis")
-            .attr("transform",`translate(${margin.left - 10},${margin.top})`)
-            .call(leftAxis)
+              .attr("class", "y axis")
+              .attr("transform",`translate(${margin.left - 2},${margin.top})`)
+              .call(leftAxis)
           annotations.append("g")
-            .attr("class", "y gridlines")
-            .attr("transform",`translate(${margin.left - 10},${margin.top})`)
-            .call(leftGridlines);
+              .attr("class", "y gridlines")
+              .attr("transform",`translate(${margin.left - 10},${margin.top})`)
+              .call(leftGridlines);
 
           let stockObjects = [];
           stocks.forEach((stock, index) => {
             const open = stock[0].Open;
             let lineGenerator = d3.line()
-              .x(value => scaleTime(value.Date))
-              .y(value => scaleLinear(percentageChange(value.Open, open)));
+                .x(value => scaleTime(value.Date))
+                .y(value => scaleLinear(percentageChange(value.Open, open)));
 
             stock = {
-              name: stockNames[index],
-              values: stock,
-              lineGenerator: lineGenerator,
+                name: stockNames[index],
+                values: stock,
+                lineGenerator: lineGenerator,
             }
             stockObjects.push(stock);
           })
           console.log(stockObjects);
           svg.append("text")
-            .attr("class", "y label")
-            .attr("text-anchor", "end")
-            .attr("y", 6)
-            .attr("dy", ".75em")
-            .attr("transform", "rotate(-90)")
-            .text("Daily change of stock (percent change)");
+              .attr("class", "y label")
+              .attr("text-anchor", "end")
+              .attr("x", -140)
+              .attr("y", 0)
+              .attr("dy", ".75em")
+              .attr("transform", "rotate(-90)")
+              .text("Percent Change of Stock");
 
           svg.append("text")
-            .attr("class", "x label")
-            .style("text-anchor", "middle")
-            .attr("x", chartWidth)
-            .attr("y", height)
-            .text("Date");
+              .attr("class", "x label")
+              .style("text-anchor", "middle")
+              .attr("x", chartWidth/2+60)
+              .attr("y", height)
+              .text("Date");
           let gTags = chartArea.selectAll("g").data(stockObjects)
                             .join("g")
                             .attr("class", "stock")
@@ -193,19 +194,19 @@
               .attr("d", d => d.lineGenerator(d.values));
 
           svg.selectAll("labels")
-            .data(stockObjects)
-            .enter()
-            .append("text")
-            .attr("x", 50)
-            .attr("y", (d,i) => 100 + i*25) // 100 is where the first dot appears. 25 is the distance between dots
-            .style("fill", (d) => scaleOrdinal(d.name))
-            .text(d => d.name)
+              .data(stockObjects)
+              .enter()
+              .append("text")
+              .attr("x", 50)
+              .attr("y", (d,i) => 100 + i*25) // 100 is where the first dot appears. 25 is the distance between dots
+              .style("fill", (d) => scaleOrdinal(d.name))
+              .text(d => d.name)
 
           // add a title
           svg.append("text")
-             .attr("x", 75)
-             .attr("y", 50)
-             .text("Stock performance in percentages relative to baseline from Jan 2020 to Oct 2022")
+              .attr("x", 100)
+              .attr("y", 70)
+              .text("Stock Performance in Percentages Relative to Baseline From Jan 2020 to Oct 2022")
         }
         initialize();
 
