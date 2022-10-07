@@ -168,7 +168,20 @@
             stockObjects.push(stock);
           })
           console.log(stockObjects);
+          svg.append("text")
+            .attr("class", "y label")
+            .attr("text-anchor", "end")
+            .attr("y", 6)
+            .attr("dy", ".75em")
+            .attr("transform", "rotate(-90)")
+            .text("Daily change of stock (percent change)");
 
+          svg.append("text")
+            .attr("class", "x label")
+            .style("text-anchor", "middle")
+            .attr("x", chartWidth)
+            .attr("y", height)
+            .text("Date");
           let gTags = chartArea.selectAll("g").data(stockObjects)
                             .join("g")
                             .attr("class", "stock")
