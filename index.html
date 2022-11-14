@@ -43,14 +43,14 @@
           var ordScale = d3.scaleOrdinal()
                             .domain(["Brown", "Columbia", "Cornell", "Yale", "Harvard", "Dartmouth", "Penn", "Princeton"])
                             .range(['#4E3629', '#9BCBEB', '#B31B1B', '#00356B', '#A41034', '#046A38', '#011F5B', '#FF671F']);
-          
+
           let totalStudents = 0;
           schools.forEach(d => {
             console.log(d["Expected Number of Students to Enroll"])
           })
 
-          var pie = d3.pie().value(function(d) { 
-                return d["Expected Number of Students to Enroll"]; 
+          var pie = d3.pie().value(function(d) {
+                return d["Expected Number of Students to Enroll"];
             });
 
 
@@ -66,10 +66,10 @@
           var label = d3.arc()
             .outerRadius(radius)
             .innerRadius(0);
-            
+
           arc.append("text")
-            .attr("transform", function(d) { 
-                      return "translate(" + label.centroid(d) + ")"; 
+            .attr("transform", function(d) {
+                      return "translate(" + label.centroid(d) + ")";
               })
             .text(function(d) { return d.data["Ivy League Colleges"]; })
             .style("font-family", "arial")
@@ -83,6 +83,86 @@
         }
         initialize();
       </script>
+    </p>
+    <p id="bar chart">
+        <svg id="barChart" height="500" width="500"></svg>
+        <script>
+        async function initialize2() {
+            let admData = await d3.csv("data/ivy_stats1.csv", d3.autoType);
+            //console.log(admData);
+
+            const svg2 = d3.select("svg#barChart");
+            const width2 = svg2.attr("width");
+            const height2 = svg2.attr("height");
+            const margin2 = {top: 20, right: 20, bottom: 50, left: 50};
+            const chartWidth2 = width2 - margin2.left - margin2.right;
+            const chartHeight2 = height2 - margin2.top - margin2.bottom;
+
+            let chartArea2 = svg2.append("g").attr("id","chart-area2")
+                               .attr('transform', `translate(${margin2.left},${margin2.top})`);
+
+            let maxRate = 0;
+            admData.forEach( (d, i) => {
+                d['name'] = String(d['Ivy League Colleges']);
+                d['ed'] = Number((d['Early Decision / Action Accept. Rate']).replace('%', ''));
+                d['rd'] = Number((d['Regular Decision Accept. Rate']).replace('%', ''));
+                d['oar'] = Number((d['Overall Accept. Rate']).replace('%', ''));
+                if(d['ed'] > maxRate) {
+                    maxRate = d['ed'];
+                }
+            });
+
+            // Problem -> Princeton has a NaN value for ED admissions, can't figure out how to get
+            // rid of that value without getting rid of all Princeton data. Not sure how to go about this
+
+            //admData = admData.filter( (d) => {return d['name'] && (d['ed'] > 0) && d['rd'] && d['oar']});
+
+            let xDom = ["Brown", "Columbia", "Cornell", "Yale", "Harvard", "Dartmouth", "Penn", "Princeton"];
+            let xScale = d3.scaleBand()
+                            .domain(xDom)
+                            .range([0, chartWidth2])
+                            .paddingInner(0.5)
+                            .paddingOuter(0.5);
+
+
+            let yScale = d3.scaleLinear().domain([0, maxRate]).range([chartHeight2, 0]);
+            console.log(yScale(3.5));
+
+            let leftAxis = d3.axisLeft(yScale);
+            svg2.append('g')
+                .attr('transform', `translate(${margin2.left-10},${margin2.top})`)
+                .call(leftAxis);
+
+            let bottomAxis = d3.axisBottom(xScale);
+            svg2.append('g')
+                .attr('transform', `translate(${margin2.left},${chartHeight2+margin2.top+10})`)
+                .call(bottomAxis);
+
+            admData.forEach( (d, i) => {
+                chartArea2.append('rect')
+                    .attr('x', xScale(d['name']))
+                    .attr('y', yScale(d['ed']))
+                    .attr('width', xScale.bandwidth())
+                    .attr('height', chartHeight2-yScale(d['ed']))
+                    .style('fill', '#9BCBEB');
+                chartArea2.append('rect')
+                    .attr('x', xScale(d['name']))
+                    .attr('y', yScale(d['oar']))
+                    .attr('width', xScale.bandwidth())
+                    .attr('height', chartHeight2-yScale(d['oar']))
+                    .style('fill', '#3563C1');
+                chartArea2.append('rect')
+                    .attr('x', xScale(d['name']))
+                    .attr('y', yScale(d['rd']))
+                    .attr('width', xScale.bandwidth())
+                    .attr('height', chartHeight2-yScale(d['rd']))
+                    .style('fill', '#011F5B');
+            })
+        }
+        initialize2();
+        </script>
+        <br>Note: no data available for Princeton ED Admissions</br>
+        <br>Key: Lightest = Early Decision, Middle = Total Admissions, Darkest = Regular Decision</br>
     </p>
   </body>
 </html>
