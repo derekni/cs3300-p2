@@ -276,7 +276,7 @@
               // update bars
               chartArea2
                 .selectAll("rect.bar")
-                .data(validData)
+                .data(validData, d => d["Ivy League Colleges"])
                 .join(
                   (enter) =>
                     enter
