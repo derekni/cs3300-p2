@@ -20,7 +20,7 @@
       <div id="graph"></div>
       <script>
         async function initialize() {
-          const schools = await d3.csv("data/ivy_stats1.csv", d3.autoType);
+          const schools = await d3.csv("data/ivy_stats.csv", d3.autoType);
           console.log(schools)
           const div = d3.select("div");
           div.append("svg")
@@ -85,11 +85,10 @@
       </script>
     </p>
     <p id="bar chart">
-        <svg id="barChart" height="500" width="500"></svg>
+        <svg id="barChart" height="500" width="600"></svg>
         <script>
         async function initialize2() {
-            let admData = await d3.csv("data/ivy_stats1.csv", d3.autoType);
-            //console.log(admData);
+            let admData = await d3.csv("data/ivy_stats.csv", d3.autoType);
 
             const svg2 = d3.select("svg#barChart");
             const width2 = svg2.attr("width");
@@ -98,6 +97,7 @@
             const chartWidth2 = width2 - margin2.left - margin2.right;
             const chartHeight2 = height2 - margin2.top - margin2.bottom;
 
+            let annotations2 = svg2.append("g").attr("id", "annotations");
             let chartArea2 = svg2.append("g").attr("id","chart-area2")
                                .attr('transform', `translate(${margin2.left},${margin2.top})`);
 
@@ -124,19 +124,90 @@
                             .paddingInner(0.5)
                             .paddingOuter(0.5);
 
-
             let yScale = d3.scaleLinear().domain([0, maxRate]).range([chartHeight2, 0]);
             console.log(yScale(3.5));
 
             let leftAxis = d3.axisLeft(yScale);
-            svg2.append('g')
+            annotations2.append('g')
                 .attr('transform', `translate(${margin2.left-10},${margin2.top})`)
                 .call(leftAxis);
 
+            let leftGridlines = d3.axisLeft(yScale)
+                                  .tickSize(-chartWidth2-10)
+                                  .tickFormat("");
+            annotations2.append('g')
+                .attr('transform', `translate(${margin2.left-10},${margin2.top})`)
+                .attr("class", "y gridlines")
+                .call(leftGridlines);
+
             let bottomAxis = d3.axisBottom(xScale);
-            svg2.append('g')
+            annotations2.append('g')
                 .attr('transform', `translate(${margin2.left},${chartHeight2+margin2.top+10})`)
                 .call(bottomAxis);
+
+            // function updateBarsAnimated(key) {
+            //   const data = admData[key];
+            //   console.log(data);
+            // }
+            console.log(admData);
+            function updateBarsAnimated(key) {
+              const data = yearData[yearKey];
+              console.log(data);
+
+              const genres = d3.map(data, (d) => d.genre);
+              const genreScale = d3
+                .scaleBand()
+                .domain(genres)
+                .range([0, chartWidth])
+                .padding(0.05);
+
+              // Update and animate axes
+              bottomAxis.scale(genreScale);
+              bottomAxisG.transition().call(bottomAxis);
+
+              // FOR WEDNESDAY:
+              // Something is going on, still... Take a look between a few decades and think about how the rectangles
+              //  are being re-used by the data join. Are they consistent? Does it match what the axis labels do?
+              chartArea
+                .selectAll("rect.bar")
+                .data(data, (d) => d["genre"])
+                .join(
+                  (enter) =>
+                    enter
+                      .append("rect")
+                      .attr("class", "bar")
+                      .attr("fill", "steelblue")
+                      .attr("x", (d) => genreScale(d.genre))
+                      .attr("y", (d) => percentScale(d.percentpass))
+                      .attr(
+                        "height",
+                        (d) => percentScale(0) - percentScale(d.percentpass)
+                      )
+                      .attr("width", genreScale.bandwidth())
+                      .attr("opacity", 0) // Set opacity low, then animate to 1 to make them fade in
+                      .call((enter) => enter.transition().attr("opacity", 1)),
+                  (update) =>
+                    update.call((update) =>
+                      update
+                        .transition() // Animate resizing and movement
+                        .attr("fill", "steelblue")
+                        .attr("x", (d) => genreScale(d.genre))
+                        .attr("y", (d) => percentScale(d.percentpass))
+                        .attr(
+                          "height",
+                          (d) => percentScale(0) - percentScale(d.percentpass)
+                        )
+                        .attr("width", genreScale.bandwidth())
+                    ),
+                  (exit) =>
+                    exit.call((exit) =>
+                      exit.transition().attr("opacity", 0).remove()
+                    )
+                );
+            }
+
+            console.log("admin data");
+            console.log(admData);
 
             admData.forEach( (d, i) => {
                 chartArea2.append('rect')
