@@ -3,15 +3,6 @@
     <meta charset="UTF-8">
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
-      .title-holder {
-        text-align: center;
-      }
-      .title {
-        font-family: 'Lato', sans-serif;
-      }
-      .subtitle {
-        font-size: 20px;
-      }
       .font {
         font-size: 18px;
       }
@@ -25,11 +16,9 @@
 
       /* chart */
       #chart {
-        height: 800px;
         margin: 0 auto;
         position: relative;
         display: block;
-        width: 1200px;
       }
 
       /* tooltip */
@@ -39,12 +28,11 @@
         color: #333;
         display: none;
         font-size: 18px;
-        left: 130px;
         padding: 10px;
         position: absolute;
         text-align: center;
         top: 95px;
-        width: 80px;
+        width: 200px;
         z-index: 10;
       }
     </style>
@@ -68,8 +56,8 @@
           var legendSpacing = 6;
 
           var color = d3.scaleOrdinal()
-                            .domain(["Brown", "Columbia", "Cornell", "Yale", "Harvard", "Dartmouth", "Penn", "Princeton"])
-                            .range(['#4E3629', '#9BCBEB', '#B31B1B', '#00356B', '#A41034', '#046A38', '#011F5B', '#FF671F']);
+                            .domain(["Brown", "Cornell", "Columbia", "Yale", "Harvard", "Dartmouth", "Penn", "Princeton"])
+                            .range(['#4E3629', '#B31B1B', '#9BCBEB', '#00356B', '#A41034', '#046A38', '#011F5B', '#FF671F']);
 
           var svg = d3.select('#chart')
             .append('svg')
@@ -85,16 +73,18 @@
             .outerRadius(radius);
 
           var pie = d3.pie()
-            .value( d=> { return d['Expected Number of Students to Enroll']; })
-            .sort(null);
+            .value( d=> { return d['Total Apps Accepted']; })
 
           // define tooltip
           var tooltip = d3.select('#chart')
             .append('div')                                     
-            .attr('class', 'tooltip'); 
-
+            .attr('class', 'tooltip') 
+          
           tooltip.append('div')                           
-            .attr('class', 'label');                       
+            .attr('class', 'school'); 
+           
+          tooltip.append('div')
+            .attr('class', 'expected')                     
 
           tooltip.append('div')                     
             .attr('class', 'count');                   
@@ -103,7 +93,7 @@
             .attr('class', 'percent');
 
           schools.forEach( function(d) {
-            d["Expected Number of Students to Enroll"] =+d["Expected Number of Students to Enroll"];
+            d["Total Apps Accepted"] =+d["Total Apps Accepted"];
             d.enabled = true;
           });
 
@@ -118,19 +108,23 @@
 
           path.on('mouseover', function(event) {     
             d3.select(this).transition().duration(200)
-                            .attr("stroke", "black")
+                            .attr("stroke", "white")
                             .attr("stroke-width", 5)
             var total = d3.sum(schools.map(function(d) {         
-              return (d.enabled) ? d["Expected Number of Students to Enroll"] : 0; 
+              return (d.enabled) ? d["Total Apps Accepted"] : 0; 
               })); 
-            var student_enroll = event.target.__data__.data["Expected Number of Students to Enroll"]
-            var student_count = event.target.__data__.data["Ivy League Colleges"]
-        
+            var student_enroll = event.target.__data__.data["Total Apps Accepted"]
+            var school_name = event.target.__data__.data["Ivy League Colleges"]
+            var student_expected = event.target.__data__.data["Expected Number of Students to Enroll"]
+
             var percent = Math.round(1000 * student_enroll / total) / 10;
-            tooltip.select('.label').html(student_count);           
-            tooltip.select('.count').html("Students: " + student_enroll);            
-            tooltip.select('.percent').html(percent + '%');          
-            tooltip.style('display', 'block');                      
+            tooltip.select('.school').html(school_name)
+                   .style('color', color(school_name))
+                   .style('font-weight', 'bold');        
+            tooltip.select('.expected').html("Expected to enroll: " + student_expected );    
+            tooltip.select('.count').html("Students accepted: " + student_enroll);            
+            tooltip.select('.percent').html("% of total: " + percent + '%'); 
+            tooltip.style('display', 'block');               
           });                                                             
 
           path.on('mouseout', function() {    
