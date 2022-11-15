@@ -3,11 +3,49 @@
     <meta charset="UTF-8">
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <style>
-      .gridlines line{
-        stroke: #bbb
+      .title-holder {
+        text-align: center;
       }
-      .gridlines .domain{
-        stroke: none
+      .title {
+        font-family: 'Lato', sans-serif;
+      }
+      .subtitle {
+        font-size: 20px;
+      }
+      .font {
+        font-size: 18px;
+      }
+      /* legend */
+      .legend {
+        font-size: 14px;
+      }
+      rect {
+        stroke-width: 2;
+      }
+
+      /* chart */
+      #chart {
+        height: 800px;
+        margin: 0 auto;
+        position: relative;
+        display: block;
+        width: 1200px;
+      }
+
+      /* tooltip */
+      .tooltip {
+        background: #eee;
+        box-shadow: 0 0 5px #999999;
+        color: #333;
+        display: none;
+        font-size: 18px;
+        left: 130px;
+        padding: 10px;
+        position: absolute;
+        text-align: center;
+        top: 95px;
+        width: 80px;
+        z-index: 10;
       }
     </style>
   </head>
@@ -17,69 +55,116 @@
     <p>Graph 1: pie chart, shows population, hover or click to see breakdown and further subsections (and possibly zoom in)</p>
     <p>Graph 2: chart of USA, color is acceptance rate, size of dot is school size, hover to get some info, click to zoom in and get a picture of campus or mascot or smth</p>
     <p id="p1">
-      <div id="graph"></div>
+      <div id="chart"></div>
       <script>
         async function initialize() {
           const schools = await d3.csv("data/ivy_stats.csv", d3.autoType);
           console.log(schools)
-          const div = d3.select("div");
-          div.append("svg")
-             .attr("width", "500")
-             .attr("height", "400")
-             .attr("id", "plot1")
+          var chartWidth = 1200;
+          var chartHeight = 600;
 
-          const svg = d3.select("svg#plot1");
-          const width = svg.attr("width");
-          const height = svg.attr("height");
-          const margin = {top: 70, right: 70, bottom: 50, left: 70};
-          const chartWidth = width - margin.left - margin.right;
-          const chartHeight = height - margin.top - margin.bottom;
+          // legend dimensions
+          var legendRectSize = 25;
+          var legendSpacing = 6;
 
-          const title = svg.append("text").text("Number of students admitted to Ivy League schools in 2022").attr("x")
-
-          let chartArea = svg.append("g").attr("id","chart-area")
-                          .attr("transform","translate(" + width / 2 + "," + height / 2 + ")");
-
-          var ordScale = d3.scaleOrdinal()
+          var color = d3.scaleOrdinal()
                             .domain(["Brown", "Columbia", "Cornell", "Yale", "Harvard", "Dartmouth", "Penn", "Princeton"])
                             .range(['#4E3629', '#9BCBEB', '#B31B1B', '#00356B', '#A41034', '#046A38', '#011F5B', '#FF671F']);
 
-          let totalStudents = 0;
-          schools.forEach(d => {
-            console.log(d["Expected Number of Students to Enroll"])
-          })
+          var svg = d3.select('#chart')
+            .append('svg')
+            .attr('width', chartWidth) 
+            .attr('height', chartHeight)
+            .append('g')
+            .attr('transform', 'translate(' + (chartWidth / 2) + ',' + (chartHeight / 2) + ')');
 
-          var pie = d3.pie().value(function(d) {
-                return d["Expected Number of Students to Enroll"];
+          var radius = Math.min(chartWidth, chartHeight) / 2;
+
+          var arc = d3.arc()
+            .innerRadius(0)
+            .outerRadius(radius);
+
+          var pie = d3.pie()
+            .value( d=> { return d['Expected Number of Students to Enroll']; })
+            .sort(null);
+
+          // define tooltip
+          var tooltip = d3.select('#chart')
+            .append('div')                                     
+            .attr('class', 'tooltip'); 
+
+          tooltip.append('div')                           
+            .attr('class', 'label');                       
+
+          tooltip.append('div')                     
+            .attr('class', 'count');                   
+
+          tooltip.append('div')  
+            .attr('class', 'percent');
+
+          schools.forEach( function(d) {
+            d["Expected Number of Students to Enroll"] =+d["Expected Number of Students to Enroll"];
+            d.enabled = true;
+          });
+
+          // creating the chart
+          var path = svg.selectAll('path')
+            .data(pie(schools))
+            .enter()
+            .append('path') 
+            .attr('d', arc) 
+            .attr('fill', d => { return color(d.data["Ivy League Colleges"]); })
+            .each( d => { this._current - d; });
+
+          path.on('mouseover', function(event) {      
+            var total = d3.sum(schools.map(function(d) {         
+              return (d.enabled) ? d["Expected Number of Students to Enroll"] : 0; 
+              })); 
+            var student_enroll = event.target.__data__.data["Expected Number of Students to Enroll"]
+            var student_count = event.target.__data__.data["Ivy League Colleges"]
+        
+            var percent = Math.round(1000 * student_enroll / total) / 10;
+            tooltip.select('.label').html(student_count);           
+            tooltip.select('.count').html("Students: " + student_enroll);            
+            tooltip.select('.percent').html(percent + '%');          
+            tooltip.style('display', 'block');                      
+          });                                                             
+
+          path.on('mouseout', function() {                       
+            tooltip.style('display', 'none');
+          });
+          
+          path.on('mousemove', function(event) {             
+            tooltip.style('top', (event.layerY + 10) + 'px')
+              .style('left', (event.layerX + 10) + 'px');
             });
 
-
-          var arc = chartArea.selectAll("arc")
-                    .data(pie(schools))
-                    .enter();
-
-          const radius = 200;
-          var path = d3.arc()
-                      .outerRadius(radius)
-                      .innerRadius(0);
-
-          var label = d3.arc()
-            .outerRadius(radius)
-            .innerRadius(0);
-
-          arc.append("text")
-            .attr("transform", function(d) {
-                      return "translate(" + label.centroid(d) + ")";
-              })
-            .text(function(d) { return d.data["Ivy League Colleges"]; })
-            .style("font-family", "arial")
-            .style("font-size", 15);
-
-          arc.append("path")
-            .attr("d", path)
-            .attr("fill", function(d) {
-              return ordScale(d.data["Ivy League Colleges"]);
+          // define legend
+          var legend = svg.selectAll('.legend')
+            .data(color.domain())
+            .enter() 
+            .append('g')
+            .attr('class', 'legend')
+            .attr('transform', function(d, i) {                   
+              var height = legendRectSize + legendSpacing;   
+              var offset =  height * color.domain().length / 2;
+              var horz = 18 * legendRectSize;
+              var vert = i * height - offset; 
+                return 'translate(' + horz + ',' + vert + ')'; 
             });
+
+          // adding colored squares to legend
+          legend.append('rect')                                   
+            .attr('width', legendRectSize)                
+            .attr('height', legendRectSize)                
+            .style('fill', color)
+            .style('stroke', "black") 
+            
+          // adding text to legend
+          legend.append('text')                                    
+            .attr('x', legendRectSize + legendSpacing)
+            .attr('y', legendRectSize - legendSpacing)
+            .text(function(d) { return d; }); // return label
         }
         initialize();
       </script>
