@@ -45,9 +45,9 @@
     </style>
   </head>
   <body>
-    <h2>Visualizing statisitics of students admitted to Ivy League schools in Class of 2025</h2>
+    <h2>Ivy League Admissions for the Class of 2025</h2>
     <h3>Megan Jung (mj374), Derek Ni (dan82), Bhav Patel (bdp64), Josh Lundmark (jel299)</h3>
-    <p>Graph 1: pie chart, shows population, hover or click to see breakdown and further subsections (and possibly zoom in)</p>
+    <p>(hover or click to see breakdown and further subsections) </p>
     <p id="p1">
       <div id="chart"></div>
       <script>
@@ -56,7 +56,11 @@
           .range(['#4E3629', '#B31B1B', '#9BCBEB', '#00356B', '#A41034', '#046A38', '#011F5B', '#FF671F']);
         async function initialize() {
           const schools = await d3.csv("data/ivy_stats.csv", d3.autoType);
-          console.log(schools)
+          const diversity = await d3.csv("data/ivy_demo_graphics.csv", d3.autoType);
+
+          
+          //console.log(schools)
+          //console.log(diversity)
           var chartWidth = 700;
           var chartHeight = 600;
 
@@ -73,7 +77,17 @@
             .append('g')
             .attr('transform', 'translate(' + (chartWidth / 2) + ',' + (chartHeight / 2) + ')');
 
-          var radius = Math.min(chartWidth, chartHeight) / 2;
+          let chartTitle = svg.append("text")
+                                .text("Pie of Ivy League Class of 2025 Stats")
+                                
+                                .attr("y", -270)
+                                .attr("height", 30)
+                                .attr("width", "50%")
+                                .style("text-anchor", "middle")
+                                .style("font-family", "sans-serif")
+                                .style("font-size", 21)
+
+          var radius = Math.min(chartWidth, chartHeight - 100) / 2;
 
           var arc = d3.arc()
             .innerRadius(0)
@@ -98,6 +112,33 @@
 
           tooltip.append('div')  
             .attr('class', 'percent');
+          
+            
+          tooltip.append('div')
+            .attr('class', 'newline')
+            .style('font-weight', 'bold');
+
+          tooltip.append('div')
+            .attr('class', 'hispanic');
+
+          tooltip.append('div')
+            .attr('class', 'black');
+
+          tooltip.append('div')
+            .attr('class', 'asian');
+
+          tooltip.append('div')
+            .attr('class', 'hawaiian');
+
+            tooltip.append('div')
+            .attr('class', 'white');
+
+          tooltip.append('div')
+            .attr('class', 'international');
+
+          tooltip.append('div')
+            .attr('class', 'unknown');
+
 
           schools.forEach( function(d) {
             d["Total Apps Accepted"] =+d["Total Apps Accepted"];
@@ -124,13 +165,26 @@
             var school_name = event.target.__data__.data["Ivy League Colleges"]
             var student_expected = event.target.__data__.data["Expected Number of Students to Enroll"]
 
+            // get the id of the array we are looking at
+            var id = event.target.__data__.index;
+            //console.log(event.target.__data__.index + " " + school_name);
+            
+          
             var percent = Math.round(1000 * student_enroll / total) / 10;
             tooltip.select('.school').html(school_name)
                    .style('color', color(school_name))
                    .style('font-weight', 'bold');        
             tooltip.select('.expected').html("Expected to enroll: " + student_expected );    
             tooltip.select('.count').html("Students accepted: " + student_enroll);            
-            tooltip.select('.percent').html("% of total: " + percent + '%'); 
+            tooltip.select('.percent').html("% of total: " + percent + '%');
+            tooltip.select('.hispanic').html("Hispanic: " + diversity[id]['Hispanic']);
+            tooltip.select('.black').html("African American: " + diversity[id]['Black']);
+            tooltip.select('.hawaiian').html("Hawiiian/Pacific Isle: " + diversity[id]['Hawaiian/Pacific Isle'] );
+            tooltip.select('.international').html("International: " + diversity[id]["International"]);
+            tooltip.select('.white').html("White: " + diversity[id]["White"]);
+            tooltip.select('.unknown').html("Unknown: " + diversity[id]['Unknown']);
+            tooltip.select('.asian').html("Asian: " + diversity[id]['Asian']);
+            tooltip.select('.newline').html("Demographics:");
             tooltip.style('display', 'block');               
           });                                                             
 
