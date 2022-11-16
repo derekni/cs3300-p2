@@ -79,7 +79,6 @@
 
           let chartTitle = svg.append("text")
                                 .text("Pie of Ivy League Class of 2025 Stats")
-                                
                                 .attr("y", -270)
                                 .attr("height", 30)
                                 .attr("width", "50%")
@@ -221,10 +220,11 @@
             .attr('height', legendRectSize)                
             .style('fill', color)
             .style('stroke', "black") 
+            .attr('x', legendRectSize + legendSpacing - 220)
             
           // adding text to legend
           legend.append('text')                                    
-            .attr('x', legendRectSize + legendSpacing)
+            .attr('x', legendRectSize + legendSpacing - 190)
             .attr('y', legendRectSize - legendSpacing)
             .text(function(d) { return d; }); // return label
         }
